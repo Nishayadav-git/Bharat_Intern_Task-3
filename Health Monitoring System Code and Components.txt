@@ -1,0 +1,70 @@
+
+Components:
+
+1. Arduino Uno board
+2. Pulse Sensor (e.g., PulseSensor.com's sensor)
+3. Blood Pressure Sensor (e.g., a general piezoelectric pressure sensor. But keep in mind, it will not give you accurate results)
+4. Glucose Sensor for Arduino (e.g., Glucometer Sensor AD-101 by Analog Devices, although this is not a proven device and is also experimental)
+5. ESP8266 Wi-Fi Module (For sending data remotely)
+6. Jumper wires
+7. Resistors & capacitors as required by the sensors
+
+Aeduino Code : 
+
+#include <ESP8266WiFi.h>
+
+// Assign your sensor's pins here
+const int PULSE_SENSOR_PIN = A0;
+const int BLOOD_PRESSURE_SENSOR_PIN = A1;
+const int GLUCOSE_SENSOR_PIN = A2;
+
+// WiFi parameters to be configured
+const char* ssid     = "your_SSID";
+const char* password = "your_PASSWORD";
+
+WiFiServer server(80);
+
+void setup()
+{
+    Serial.begin(115200);
+    
+    // Connect to Wi-Fi
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(1000);
+      Serial.println("Connecting to WiFi...");
+    }
+    
+    server.begin();
+}
+
+void loop()
+{
+    // Reading from the sensors
+    int pulse = analogRead(PULSE_SENSOR_PIN);
+    int blood_pressure = analogRead(BLOOD_PRESSURE_SENSOR_PIN);
+    int glucose = analogRead(GLUCOSE_SENSOR_PIN);
+
+    // Check if a client has connected
+    WiFiClient client = server.available();
+    if (client) {
+      String request = client.readStringUntil('\r');
+      client.println("HTTP/1.1 200 OK");
+      client.println("Content-Type: text/html");
+      client.println("Connection: close");
+      client.println();
+
+      // Sending the data to the client
+      client.print("Pulse: ");
+      client.println(pulse);
+      client.print("Blood Pressure: ");
+      client.println(blood_pressure);
+      client.print("Glucose Level: ");
+      client.println(glucose);
+    }
+}
+
+
+//This code is configured to connect to a WiFi network and set up a 
+basic HTTP server that sends sensor data to the client that connects to it. 
+Please replace "your_SSID" and "your_PASSWORD" with your actual WiFi SSID and password.
